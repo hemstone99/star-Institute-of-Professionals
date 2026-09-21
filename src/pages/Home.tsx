@@ -75,27 +75,32 @@ export default function Home() {
   useEffect(() => {
     let live = true;
     (async () => {
-      try {
-        const [c, n, e, f, t, a] = await Promise.all([
-          api('/api/courses'),
-          api('/api/news?limit=3'),
-          api('/api/events?upcoming=true&limit=3'),
-          api('/api/faqs'),
-          api('/api/testimonials'),
-          api('/api/announcements'),
-        ]);
-        if (!live) return;
-        setCourses(Array.isArray(c) ? c : []);
-        setNews(Array.isArray(n) ? n : []);
-        setEvents(Array.isArray(e) ? e : []);
-        setFaqs(Array.isArray(f) ? f.slice(0, 6) : []);
-        setTestimonials(Array.isArray(t) ? t.slice(0, 3) : []);
-        setAnn(Array.isArray(a) && a.length ? a[0] : null);
-      } catch {
-        /* sections handle empty states */
-      } finally {
-        if (live) setLoading(false);
-      }
+      const results = await Promise.allSettled([
+        api('/api/courses'),
+        api('/api/news?limit=3'),
+        api('/api/events?upcoming=true&limit=3'),
+        api('/api/faqs'),
+        api('/api/testimonials'),
+        api('/api/announcements'),
+      ]);
+      if (!live) return;
+      const value = <T,>(index: number, fallback: T) => {
+        const result = results[index];
+        return result.status === 'fulfilled' ? result.value : fallback;
+      };
+      const coursesData = value(0, []);
+      const newsData = value(1, []);
+      const eventsData = value(2, []);
+      const faqsData = value(3, []);
+      const testimonialsData = value(4, []);
+      const announcementsData = value(5, []);
+      setCourses(Array.isArray(coursesData) ? coursesData : []);
+      setNews(Array.isArray(newsData) ? newsData : []);
+      setEvents(Array.isArray(eventsData) ? eventsData : []);
+      setFaqs(Array.isArray(faqsData) ? faqsData.slice(0, 6) : []);
+      setTestimonials(Array.isArray(testimonialsData) ? testimonialsData.slice(0, 3) : []);
+      setAnn(Array.isArray(announcementsData) && announcementsData.length ? announcementsData[0] : null);
+      setLoading(false);
     })();
     return () => { live = false; };
   }, []);
@@ -106,7 +111,14 @@ export default function Home() {
     return () => clearInterval(t);
   }, []);
 
-  const homepageCourses = [...courses.filter((c) => c.featured), ...courses.filter((c) => !c.featured)].slice(0, 3);
+  const homepageCourseSlugs = [
+    'certified-public-accountant-cpa',
+    'accounting-technicians-diploma-atd',
+    'certified-investment-financial-analysts-cifa',
+  ];
+  const homepageCourses = homepageCourseSlugs
+    .map((slug) => courses.find((course) => course.slug === slug))
+    .filter((course): course is Course => Boolean(course));
 
   return (
     <main id="main-content">

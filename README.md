@@ -73,6 +73,7 @@ Create the service from the repository and set these secret/environment values i
 | `ADMIN_PASSWORD` | Production admin password |
 
 Before deploying, run the SQL in `db/schema.sql` and the current seed/content SQL in `db/seed.sql` in the Supabase SQL Editor. The Render health check is `/api/health`.
+Before deploying, run `db/supabase-schema.sql` and then `db/supabase-seed.sql` in the Supabase SQL Editor. These are PostgreSQL files for Supabase. Keep `db/schema.sql` and `db/seed.sql` for the local SQLite preview only. The Render health check is `/api/health`.
 
 ## Notes
 
